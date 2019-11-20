@@ -178,7 +178,7 @@ class Hooks implements HooksInterface
 
         do {
             foreach ((array) \current(self::$filters[$identifier]) as $the_)
-                if (!\is_null($the_['function'])) {
+                if (!empty($the_['function'])) {
                     $args[1] = $value;
                     $value = \call_user_func_array($the_['function'], \array_slice($args, 1, (int) $the_['accepted_args']));
                 }
@@ -217,7 +217,7 @@ class Hooks implements HooksInterface
 
         do {
             foreach ((array) \current(self::$filters[$identifier]) as $the_)
-                if (!\is_null($the_['function']))
+                if (!empty($the_['function']))
                     $args[0] = \call_user_func_array($the_['function'], \array_slice($args, 0, (int) $the_['accepted_args']));
         } while (\next(self::$filters[$identifier]) !== false);
 
@@ -277,6 +277,7 @@ class Hooks implements HooksInterface
             $args[] = &$arg[0];
         else
             $args[] = $arg;
+
         for ($a = 2; $a < \func_num_args(); $a++)
             $args[] = \func_get_arg($a);
 
@@ -289,9 +290,10 @@ class Hooks implements HooksInterface
         \reset(self::$filters[$identifier]);
 
         do {
-            foreach ((array) \current(self::$filters[$identifier]) as $the_)
-                if (!\is_null($the_['function']))
+            foreach ((array) \current(self::$filters[$identifier]) as $the_) {
+                if (!empty($the_['function']))
                     \call_user_func_array($the_['function'], \array_slice($args, 0, (int) $the_['accepted_args']));
+            }
         } while (\next(self::$filters[$identifier]) !== false);
 
         \array_pop(self::$currentFilter);
@@ -333,11 +335,44 @@ class Hooks implements HooksInterface
         \reset(self::$filters[$identifier]);
 
         do {
-            foreach ((array) \current(self::$filters[$identifier]) as $the_)
-                if (!\is_null($the_['function']))
+            foreach ((array) \current(self::$filters[$identifier]) as $the_) {
+                if (!empty($the_['function']))
                     \call_user_func_array($the_['function'], \array_slice($args, 0, (int) $the_['accepted_args']));
-
+            }
         } while (\next(self::$filters[$identifier]) !== false);
+
+        \array_pop(self::$currentFilter);
+    }
+
+    public function justDoAction(string $identifier, $arg = '')
+    {
+        if (!isset(self::$actions))
+            self::$actions = array();
+
+        if (!isset(self::$actions[$identifier]))
+            self::$actions[$identifier] = 1;
+        else
+            ++self::$actions[$identifier];
+
+        if (!isset(self::$filters[$identifier])) {
+            return null;
+        }
+
+        self::$currentFilter[] = $identifier;
+
+        $args = array();
+        if (\is_array($arg) && 1 == \count($arg) && isset($arg[0]) && \is_object($arg[0])) // array(&$this)
+            $args[] = &$arg[0];
+        else
+            $args[] = $arg;
+
+        for ($a = 2; $a < \func_num_args(); $a++)
+            $args[] = \func_get_arg($a);
+
+        foreach ((array) \current(self::$filters[$identifier]) as $the_) {
+            if (!empty($the_['function']))
+                \call_user_func_array($the_['function'], \array_slice($args, 0, (int) $the_['accepted_args']));
+        }
 
         \array_pop(self::$currentFilter);
     }
@@ -400,22 +435,7 @@ class Hooks implements HooksInterface
 
         if (isset($function[0]) && \is_object($function[0])) {
             // Object Class Calling
-            if (\function_exists('spl_object_hash')) {
-                return \spl_object_hash($function[0]) . $function[1];
-            } else {
-                $obj_idx = \get_class($function[0]) . $function[1];
-                if (!isset($function[0]->filter_id)) {
-                    if (false === $priority)
-                        return false;
-                    $obj_idx .= isset(self::$filters[$identifier][$priority]) ? \count((array) self::$filters[$identifier][$priority]) : $filter_id_count;
-                    $function[0]->filter_id = $filter_id_count;
-                    ++$filter_id_count;
-                } else {
-                    $obj_idx .= $function[0]->filter_id;
-                }
-
-                return $obj_idx;
-            }
+            return \spl_object_hash($function[0]) . $function[1];
         } elseif (isset($function[0]) && \is_string($function[0])) {
             // Static Calling
             return $function[0] . '::' .$function[1];
@@ -430,7 +450,7 @@ class Hooks implements HooksInterface
         \reset(self::$filters['all']);
         do {
             foreach ((array) \current(self::$filters['all']) as $the_)
-                if (!\is_null($the_['function']))
+                if (!empty($the_['function']))
                     \call_user_func_array($the_['function'], $args);
         } while (\next(self::$filters['all']) !== false);
     }

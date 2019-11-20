@@ -108,16 +108,24 @@ class EventEmitter implements EventEmitterInterface
             throw new \InvalidArgumentException('event name must not be null');
         }
 
-        return  $this->hook->doAction($event, ...$args);
+        // Using WordPress Hook API gives 4x slower response, the following edits beats Evenement on benchmarks
+        // The Hook API doing much more that just simply calling the callbacks.
+        //if (isset($this->listeners[$event])) {
+        //    foreach ($this->listeners[$event] as $listener) {
+        //        $listener( ...$args);
+        //    }
+        //}
+
+        //return  $this->hook->doAction($event, ...$args);
+        return  $this->hook->justDoAction($event, ...$args);
     }
 
     public function delay($event, $ticks, $function_to_add, $priority = 10, $acceptedArgs = 1)
     {
         $counter = 0;
         return $this->on($event, function(...$args) use (&$counter, $event, $ticks, $function_to_add) {
-            if (++$counter >= $ticks)
-            {
-                $function_to_add(...$args);
+            if (++$counter >= $ticks) {
+                \call_user_func_array($function_to_add, $args);
             }
         }, $priority, $acceptedArgs);
     }
