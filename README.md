@@ -1,6 +1,6 @@
 # hooks
 
-[![Build Status](https://travis-ci.org/symplely/hooks.svg?branch=master)](https://travis-ci.org/symplely/hooks)[![codecov](https://codecov.io/gh/symplely/hooks/branch/master/graph/badge.svg)](https://codecov.io/gh/symplely/hooks)[![Maintainability](https://api.codeclimate.com/v1/badges/3fc929777fd5c6403abf/maintainability)](https://codeclimate.com/github/symplely/hooks/maintainability)
+[![Build Status](https://travis-ci.org/symplely/hooks.svg?branch=master)](https://travis-ci.org/symplely/hooks)[![codecov](https://codecov.io/gh/symplely/hooks/branch/master/graph/badge.svg)](https://codecov.io/gh/symplely/hooks)[![Maintainability](https://api.codeclimate.com/v1/badges/e7b6139e27783c3c4ae0/maintainability)](https://codeclimate.com/github/symplely/hooks/maintainability)
 
 This library allows you to easily add some event-based architecture into your application thru registering call-backs that would be executed by triggering a **hook**, **event**, or **listener** on a string identifier/tag, which we call here __$hook_spot__, which would normally be expressing desired action with prefixes like "before" or "after" if necessary.
 
