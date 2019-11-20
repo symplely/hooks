@@ -1,0 +1,38 @@
+{
+    "name": "symplely/hooks",
+    "description": "A simple event dispatching plugin library, a ported fork of WordPress hook API system.",
+    "keywords": ["hooks", "actions", "filters", "api", "emit", "trigger", "event", "dispatcher", "emitter"],
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lawrence Stubbs",
+            "email": "lstubbs@techno.express"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/symplely/hooks/issues"
+    },
+    "require": {
+        "php": ">7.1"
+    },
+    "autoload": {
+        "files": [
+            "Hooks/Core.php"
+        ],
+        "psr-4": {
+			"Async\\Hook\\": "Hooks/"
+		}
+    },
+    "require-dev": {
+        "phpunit/phpunit": ">5.7.0"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Async\\Hook\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit --bootstrap vendor/autoload.php tests"
+    }
+}

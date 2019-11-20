@@ -1,0 +1,16 @@
+language: php
+
+php:
+    - 7.1
+    - 7.2
+    - 7.3
+
+before_script:
+    - composer self-update
+    - composer require php-coveralls/php-coveralls
+
+after_success:
+    - bash <(curl -s https://codecov.io/bash)
+
+script:
+    - vendor/bin/phpunit --coverage-clover=coverage.xml
