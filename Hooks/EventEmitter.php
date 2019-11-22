@@ -28,10 +28,10 @@ class EventEmitter implements EventEmitterInterface
         $this->hook = empty($hook) ? Hooks::getInstance() : $hook;
     }
 
-    public function on($event, $function_to_add, $priority = 10, $acceptedArgs = 1)
+    public function on($event, $function_to_add, int $priority = 10, int $acceptedArgs = 1)
     {
         if (!\is_callable($function_to_add)) {
-            throw new \InvalidArgumentException("The provided " . $function_to_add . " is not a valid callable.");
+            throw new \InvalidArgumentException("The provided ".$function_to_add." is not a valid callable.");
         }
 
         if ($event === null) {
@@ -43,29 +43,32 @@ class EventEmitter implements EventEmitterInterface
         return $this->hook->addAction($event, $function_to_add, $priority, $acceptedArgs);
     }
 
-    public function once($event, $function_to_add, $priority = 10, $acceptedArgs = 1)
+    public function once($event, $function_to_add)
     {
-        $once = function () use (&$once, $event, $function_to_add) {
-            $this->off($event, $once);
-            \call_user_func_array($function_to_add, \func_get_args());
-        };
+        if (!\is_callable($function_to_add)) {
+            throw new \InvalidArgumentException("The provided ".$function_to_add." is not a valid callable.");
+        }
 
-        return $this->on($event, $once, $priority, $acceptedArgs);
+        if ($event === null) {
+            throw new \InvalidArgumentException('event name must not be null');
+        }
+
+        $this->addListener($event, $function_to_add, true);
     }
 
-    public function off($event, $function_to_remove = null, $priority = 10)
+    public function off($event, ?callable $function_to_remove = null, int $priority = 10)
     {
         if ($function_to_remove !== null) {
             $this->removeListener($event, $function_to_remove);
         }
 
-        return  $this->hook->removeAction($event, $function_to_remove, $priority);
+        return $this->hook->removeAction($event, $function_to_remove, $priority);
     }
 
-    public function add($name, $function_to_add, $priority = 10, $acceptedArgs = 1)
+    public function add($name, $function_to_add, int $priority = 10, int $acceptedArgs = 1)
     {
-        if (!is_callable($function_to_add)) {
-            throw new \InvalidArgumentException("The provided " . $function_to_add . " is not a valid callable.");
+        if (!\is_callable($function_to_add)) {
+            throw new \InvalidArgumentException("The provided ".$function_to_add." is not a valid callable.");
         }
 
         if ($name === null) {
@@ -74,75 +77,103 @@ class EventEmitter implements EventEmitterInterface
 
         $this->addListener($name, $function_to_add);
 
-        return  $this->hook->addFilter($name, $function_to_add, $priority, $acceptedArgs);
+        return $this->hook->addFilter($name, $function_to_add, $priority, $acceptedArgs);
     }
 
-    public function clear($name, $listener = null, $priority = 10)
+    public function clear($name, $function_to_remove, int $priority = 10)
     {
-        if ($listener !== null) {
-            $this->removeListener($name, $listener);
+        if ($function_to_remove !== null) {
+            $this->removeListener($name, $function_to_remove);
         }
 
-        return  $this->hook->removeFilter($name, $listener, $priority);
+        return $this->hook->removeFilter($name, $function_to_remove, $priority);
     }
 
-    public function cancel($name = '', $priority = 10)
+    public function cancel(string $name = '', int $priority = 10)
     {
         $this->removeAllListeners($name);
 
-        return  $this->hook->removeAllFilters($name, $priority);
+        return $this->hook->removeAllFilters($name, $priority);
     }
 
-    public function trigger($name, ...$value)
+    public function trigger(?string $name, ...$value)
     {
         if ($name === null) {
-            throw new \InvalidArgumentException('filter name must not be null');
+            throw new \InvalidArgumentException('filter name must be string and not be null');
         }
 
-        return  $this->hook->applyFilters($name, ...$value);
+        return $this->hook->applyFilters($name, ...$value);
     }
 
-    public function emit($event, ...$args)
+    public function emit(?string $event, ...$args)
     {
         if ($event === null) {
-            throw new \InvalidArgumentException('event name must not be null');
+            throw new \InvalidArgumentException('event name must be string and not be null');
         }
 
-        // Using WordPress Hook API gives 4x slower response, the following edits beats Evenement on benchmarks
-        // The Hook API doing much more that just simply calling the callbacks.
-        //if (isset($this->listeners[$event])) {
-        //    foreach ($this->listeners[$event] as $listener) {
-        //        $listener( ...$args);
-        //    }
-        //}
+         if (isset($this->listeners[$event])) {
+            foreach ($this->listeners[$event] as $listener) {
+                $listener( ...$args);
+            }
+        }
 
-        //return  $this->hook->doAction($event, ...$args);
-        return  $this->hook->justDoAction($event, ...$args);
+        if (isset($this->listeners[$event.'_only_once'])) {
+            $listeners = $this->listeners[$event.'_only_once'];
+            unset($this->listeners[$event.'_only_once']);
+            foreach ($listeners as $listener) {
+                $listener( ...$args);
+            }
+        }
     }
 
-    public function delay($event, $ticks, $function_to_add, $priority = 10, $acceptedArgs = 1)
+    public function dispatch(?string $event, ...$args)
+    {
+        if ($event === null) {
+            throw new \InvalidArgumentException('event name must be string and not be null');
+        }
+
+        return $this->hook->doAction($event, ...$args);
+    }
+
+    public function delay(string $event, int $ticks, callable $function_to_add, int $priority = 10, int $acceptedArgs = 1)
     {
         $counter = 0;
-        return $this->on($event, function(...$args) use (&$counter, $event, $ticks, $function_to_add) {
+        return $this->on($event, function(...$args) use (&$counter, $ticks, $function_to_add) {
             if (++$counter >= $ticks) {
                 \call_user_func_array($function_to_add, $args);
             }
         }, $priority, $acceptedArgs);
     }
 
-    public function hasEvent($event, $function_to_check = false)
+    public function hasEvent(string $event, $function_to_check = false)
     {
         return $this->hasListener('Action', $event, $function_to_check);
     }
 
-    public function hasName($name, $function_to_check = false)
+    public function hasName(string $name, $function_to_check = false)
     {
         return $this->hasListener('Filter', $name, $function_to_check);
     }
 
-    public function listeners($event = null)
+    public function listeners(?string $event)
     {
-        return isset($this->listeners[$event]) ? $this->listeners[$event] : array();
+        if ($event === null) {
+            $events = [];
+            $eventNames = \array_unique(\array_keys($this->listeners));
+            foreach ($eventNames as $eventName) {
+                $events[$eventName] = \array_merge(
+                    isset($this->listeners[$eventName]) ? $this->listeners[$eventName] : [],
+                    isset($this->listeners[$event.'_only_once']) ? $this->listeners[$event.'_only_once'] : []
+                );
+            }
+
+            return $events;
+        }
+
+        return \array_merge(
+            isset($this->listeners[$event]) ? $this->listeners[$event] : [],
+            isset($this->listeners[$event.'_only_once']) ? $this->listeners[$event.'_only_once'] : []
+        );
     }
 
     /**
@@ -158,7 +189,7 @@ class EventEmitter implements EventEmitterInterface
      */
     protected function hasListener($type, $hook, $function_to_check = false)
     {
-        $hasListener = 'has' . $type;
+        $hasListener = 'has'.$type;
 
         return (\call_user_func([$this->hook, $hasListener], $hook, $function_to_check) === false)
             ? false
@@ -166,19 +197,20 @@ class EventEmitter implements EventEmitterInterface
     }
 
     /**
-     * Add a prioritized listener
+     * Add a non prioritized listener
      *
      * @param $hook
      * @param $function_to_add
-     * @param $priority
+     * @param $isOnce
      */
-    protected function addListener($hook, $function_to_add)
+    protected function addListener($hook, $function_to_add, bool $isOnce = false)
     {
-        if (!isset($this->listeners[$hook])) {
-            $this->listeners[$hook] = [];
+        $once = ($isOnce) ? $hook.'_only_once' : $hook;
+        if (!isset($this->listeners[$once])) {
+            $this->listeners[$once] = [];
         }
 
-        $this->listeners[$hook][] = $function_to_add;
+        $this->listeners[$once][] = $function_to_add;
     }
 
     /**
@@ -203,6 +235,16 @@ class EventEmitter implements EventEmitterInterface
                 }
             }
         }
+
+        if (isset($this->listeners[$event.'_only_once'])) {
+            $index = \array_search($function_to_remove, $this->listeners[$event.'_only_once'], true);
+            if (false !== $index) {
+                unset($this->listeners[$event.'_only_once'][$index]);
+                if (\count($this->listeners[$event.'_only_once']) === 0) {
+                    unset($this->listeners[$event.'_only_once']);
+                }
+            }
+        }
     }
 
     /**
@@ -216,6 +258,8 @@ class EventEmitter implements EventEmitterInterface
     {
         if ($event !== null) {
             unset($this->listeners[$event]);
+            if (isset($this->listeners[$event.'_only_once']))
+                unset($this->listeners[$event.'_only_once']);
         } else {
             $this->listeners = [];
         }

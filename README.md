@@ -1,8 +1,8 @@
 # hooks
 
-[![Build Status](https://travis-ci.org/symplely/hooks.svg?branch=master)](https://travis-ci.org/symplely/hooks)[![codecov](https://codecov.io/gh/symplely/hooks/branch/master/graph/badge.svg)](https://codecov.io/gh/symplely/hooks)[![Maintainability](https://api.codeclimate.com/v1/badges/e7b6139e27783c3c4ae0/maintainability)](https://codeclimate.com/github/symplely/hooks/maintainability)
+[![Build Status](https://travis-ci.org/symplely/hooks.svg?branch=master)](https://travis-ci.org/symplely/hooks)[![Build status](https://ci.appveyor.com/api/projects/status/xfj5t6w5p4g28f6n/branch/master?svg=true)](https://ci.appveyor.com/project/techno-express/hooks/branch/master)[![codecov](https://codecov.io/gh/symplely/hooks/branch/master/graph/badge.svg)](https://codecov.io/gh/symplely/hooks)[![Maintainability](https://api.codeclimate.com/v1/badges/e7b6139e27783c3c4ae0/maintainability)](https://codeclimate.com/github/symplely/hooks/maintainability)
 
-This library allows you to easily add some event-based architecture into your application thru registering call-backs that would be executed by triggering a **hook**, **event**, or **listener** on a string identifier/tag, which we call here __$hook_spot__, which would normally be expressing desired action with prefixes like "before" or "after" if necessary.
+This library allows you to easily add some event-based architecture into your application thru registering call-backs that would be executed by triggering a **hook**, **event**, or **listener** on a string identifier/tag, which we call here __$hook_point__, which would normally be expressing desired action with prefixes like "before" or "after" if necessary.
 
 ----------
 
@@ -89,6 +89,10 @@ Delegate to Hooks' [remove_action]function.
 
 ### emit()
 
+No delegation, just execute/event functions `hooked` on the specific **$hook_point**.
+
+### dispatch()
+
 Delegate to Hooks' [do_action]function.
 
 ### add()
@@ -113,30 +117,30 @@ Delegate to Hooks' [apply_filters]function.
 /**
  * Hooks a function on to a specific action hook.
  */
-add_action($hook_spot, $function_to_add, $priority, $accepted_args);
+add_action($hook_point, $function_to_add, $priority, $accepted_args);
 
 /**
  * Execute functions hooked on a specific action hook.
- * Will return null if $hook_spot does not exist
+ * Will return null if $hook_point does not exist
  */
-do_action($hook_spot, ...$arg);
+do_action($hook_point, ...$arg);
 
 /**
  * Removes a function from a specified action hook.
  * Will return true if the function is removed
  */
-remove_action($hook_spot, $function_to_remove, $priority);
+remove_action($hook_point, $function_to_remove, $priority);
 
 /**
  * Check if any action has been registered for a hook.
  * Will return boolean if anything registered, or the priority.
  */
-has_action($hook_spot, $function_to_check);
+has_action($hook_point, $function_to_check);
 
 /**
  * Retrieve the number of times an action is fired.
  */
-did_action($hook_spot);
+did_action($hook_point);
 ```
 
 **FILTERS:**
@@ -146,25 +150,25 @@ did_action($hook_spot);
  * Hooks a function or method to a specific filter hook.
  * Will return boolean true
  */
-add_filter($hook_spot, $function_to_add, $priority, $accepted_args);
+add_filter($hook_point, $function_to_add, $priority, $accepted_args);
 
 /**
  * Removes a function from a specified filter hook.
  * Will return boolean Whether the function existed before it was removed
  */
-remove_filter($hook_spot, $function_to_remove, $priority, $accepted_args);
+remove_filter($hook_point, $function_to_remove, $priority, $accepted_args);
 
 /**
  * Check if any filter has been registered for a hook.
  * Will return mixed
  */
-has_filter($hook_spot, $function_to_check);
+has_filter($hook_point, $function_to_check);
 
 /**
  * Call the functions added to a filter hook.
  * Will return the filtered value after all hooked functions are applied to it.
  */
-apply_filters($hook_spot, $value, ...$arg);
+apply_filters($hook_point, $value, ...$arg);
 ```
 
 There are a few more methods but these are the main Ones you'll use.

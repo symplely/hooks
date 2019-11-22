@@ -248,13 +248,7 @@ class Hooks implements HooksInterface
 
     public function doAction(string $identifier, $arg = '')
     {
-        if (!isset(self::$actions))
-            self::$actions = array();
-
-        if (!isset(self::$actions[$identifier]))
-            self::$actions[$identifier] = 1;
-        else
-            ++self::$actions[$identifier];
+        $this->__bump_action($identifier);
 
         // Do 'all' actions first
         if (isset(self::$filters['all'])) {
@@ -301,13 +295,7 @@ class Hooks implements HooksInterface
 
     public function doActionRefArray(string $identifier, array $args)
     {
-        if (!isset(self::$actions))
-            self::$actions = array();
-
-        if (!isset(self::$actions[$identifier]))
-            self::$actions[$identifier] = 1;
-        else
-            ++self::$actions[$identifier];
+        $this->__bump_action($identifier);
 
         // Do 'all' actions first
         if (isset(self::$filters['all'])) {
@@ -340,39 +328,6 @@ class Hooks implements HooksInterface
                     \call_user_func_array($the_['function'], \array_slice($args, 0, (int) $the_['accepted_args']));
             }
         } while (\next(self::$filters[$identifier]) !== false);
-
-        \array_pop(self::$currentFilter);
-    }
-
-    public function justDoAction(string $identifier, $arg = '')
-    {
-        if (!isset(self::$actions))
-            self::$actions = array();
-
-        if (!isset(self::$actions[$identifier]))
-            self::$actions[$identifier] = 1;
-        else
-            ++self::$actions[$identifier];
-
-        if (!isset(self::$filters[$identifier])) {
-            return null;
-        }
-
-        self::$currentFilter[] = $identifier;
-
-        $args = array();
-        if (\is_array($arg) && 1 == \count($arg) && isset($arg[0]) && \is_object($arg[0])) // array(&$this)
-            $args[] = &$arg[0];
-        else
-            $args[] = $arg;
-
-        for ($a = 2; $a < \func_num_args(); $a++)
-            $args[] = \func_get_arg($a);
-
-        foreach ((array) \current(self::$filters[$identifier]) as $the_) {
-            if (!empty($the_['function']))
-                \call_user_func_array($the_['function'], \array_slice($args, 0, (int) $the_['accepted_args']));
-        }
 
         \array_pop(self::$currentFilter);
     }
@@ -453,5 +408,24 @@ class Hooks implements HooksInterface
                 if (!empty($the_['function']))
                     \call_user_func_array($the_['function'], $args);
         } while (\next(self::$filters['all']) !== false);
+    }
+
+    /**
+     * Common script before running an action or applying a filter:
+     *    - increase hits count
+     *
+     * @param string $identifier
+     */
+    protected function __bump_action($identifier)
+    {
+        if (!isset(self::$actions)) {
+            self::$actions = array();
+        }
+
+        if (!isset(self::$actions[$identifier])) {
+            self::$actions[$identifier] = 1;
+        } else {
+            ++self::$actions[$identifier];
+        }
     }
 }

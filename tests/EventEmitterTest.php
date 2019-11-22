@@ -23,7 +23,7 @@ class EventEmitterTest extends TestCase
         $this->emitter = null;
     }
 
-    public function testEventPriority()
+    public function testDispatchPriority()
     {
         $result = null;
 
@@ -35,7 +35,7 @@ class EventEmitterTest extends TestCase
             $result = 'late';
         }, 10);
 
-        $this->emitter->emit('init');
+        $this->emitter->dispatch('init');
 
         $this->assertEquals('early', $result);
     }
@@ -173,8 +173,8 @@ class EventEmitterTest extends TestCase
 
         $this->emitter->cancel();
         $this->assertSame(0, $listenersCalled);
-        $this->emitter->emit('foo');
-        $this->emitter->emit('bar');
+        $this->emitter->dispatch('foo');
+        $this->emitter->dispatch('bar');
         $this->assertSame(0, $listenersCalled);
     }
 
@@ -448,6 +448,27 @@ class EventEmitterTest extends TestCase
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('event name must not be null');
         $this->emitter->once(null, function () { });
+    }
+
+    public function testTriggerNameMustBeString()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('filter name must be string and not be null');
+        $this->emitter->trigger(null, '');
+    }
+
+    public function testEmitNameMustBeString()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('event name must be string and not be null');
+        $this->emitter->emit(null);
+    }
+
+    public function testDispatchNameMustBeString()
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('event name must be string and not be null');
+        $this->emitter->dispatch(null);
     }
 
     public function listener1()

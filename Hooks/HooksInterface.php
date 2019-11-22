@@ -6,8 +6,6 @@ namespace Async\Hook;
 
 interface HooksInterface
 {
-    public static function getInstance(): HooksInterface;
-
     /**
      * Return array of callback hooks registered for identifier.
      *
@@ -20,6 +18,52 @@ interface HooksInterface
 
     /**
      * Hooks a function or method to a specific filter identifier action.
+     *
+     * This allow other `functions/methods` to modify various types of internal data at runtime.
+     *
+     * A `function/method` can modify data by binding a callback to a filter hook. When the filter
+     * is later applied, each bound callback is run in order of priority, and given
+     * the opportunity to modify a value by returning a new value.
+     *
+     * The following example shows how a callback function is bound to a filter hook.
+     *
+     * Note that `$example` is passed to the callback, (maybe) modified, then returned:
+     *
+     *     function example_callback( $example ) {
+     *         // Maybe modify $example in some way.
+     *         return $example;
+     *     }
+     *     add_filter( 'example_filter', 'example_callback' );
+     *
+     * Bound callbacks can accept from none to the total number of arguments passed as parameters
+     * in the corresponding apply_filters() call.
+     *
+     * In other words, if an apply_filters() call passes four total arguments, callbacks bound to
+     * it can accept none (the same as 1) of the arguments or up to four. The important part is that
+     * the `$accepted_args` value must reflect the number of arguments the bound callback *actually*
+     * opted to accept. If no arguments were accepted by the callback that is considered to be the
+     * same as accepting 1 argument. For example:
+     *
+     *     // Filter call.
+     *     $value = apply_filters( 'hook', $value, $arg2, $arg3 );
+     *
+     *     // Accepting zero/one arguments.
+     *     function example_callback() {
+     *         ...
+     *         return 'some value';
+     *     }
+     *     add_filter( 'hook', 'example_callback' ); // Where $priority is default 10, $accepted_args is default 1.
+     *
+     *     // Accepting two arguments (three possible).
+     *     function example_callback( $value, $arg2 ) {
+     *         ...
+     *         return $maybe_modified_value;
+     *     }
+     *     add_filter( 'hook', 'example_callback', 10, 2 ); // Where $priority is 10, $accepted_args is 2.
+     *
+     * *Note:* The function will return true whether or not the callback is valid.
+     * It is up to you to take care. This is done for optimization purposes, so
+     * everything is as quick as possible.
      *
      * @param string $identifier The name identifier to bind a filter $function onto.
      * @param callable $function The name of the function to be called when the filter is applied.
@@ -35,6 +79,14 @@ interface HooksInterface
 
     /**
      * Removes a function from a specified filter identifier hook.
+     *
+     * This function removes a function attached to a specified filter hook. This
+     * method can be used to remove default functions attached to a specific filter
+     * hook and possibly replace them with a substitute.
+     *
+     * To remove a hook, the $function and $priority arguments must match
+     * when the hook was added. This goes for both filters and actions. No warning
+     * will be given on removal failure.
      *
      * @param string $identifier The filter identifier hook to which the function to be removed is hooked.
      * @param callable $function The name of the function which should be removed.
@@ -72,7 +124,32 @@ interface HooksInterface
     public function hasFilter(string $identifier = '', $function = false);
 
     /**
-     * Call the functions added to a filter identifier hook.
+     * Calls the callback functions that have been added to a filter identifier hook.
+     *
+     * The callback functions attached to the filter hook are invoked by calling
+     * this function. This function can be used to create a new filter hook by
+     * simply calling this function with the name of the new hook specified using
+     * the `$tag` parameter.
+     *
+     * The function also allows for multiple additional arguments to be passed to hooks.
+     *
+     * Example usage:
+     *
+     *     // The filter callback function
+     *     function example_callback( $string, $arg1, $arg2 ) {
+     *         // (maybe) modify $string
+     *         return $string;
+     *     }
+     *     add_filter( 'example_filter', 'example_callback', 10, 3 );
+     *
+     *     /*
+     *      * Apply the filters by calling the 'example_callback()' function that's
+     *      * hooked onto `example_filter` above.
+     *      *
+     *      * - 'example_filter' is the filter hook
+     *      * - 'filter me' is the value being filtered
+     *      * - $arg1 and $arg2 are the additional arguments passed to the callback.
+     *     $value = apply_filters( 'example_filter', 'filter me', $arg1, $arg2 );
      *
      * @param string $identifier The name of the filter identifier hook.
      * @param mixed $value The value on which the filters identifier hooked onto are applied on.
